@@ -1,0 +1,8 @@
+fastapi==0.115.6
+uvicorn==0.32.0
+faster-whisper>=1.0.0
+edge-tts>=6.1.0
+openai-whisper>=20231117
+# Ollama uses HTTP API via requests - no additional package needed
+python-dotenv==1.0.1
+requests==2.32.3
