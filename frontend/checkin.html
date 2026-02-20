@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MockMind AI — Check-In</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .perm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .perm-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.4rem;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .perm-card.granted {
+            border-color: var(--success);
+        }
+
+        .perm-card.denied {
+            border-color: var(--danger);
+        }
+
+        .perm-icon {
+            font-size: 2rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .perm-status {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            color: var(--text2);
+        }
+
+        .perm-card.granted .perm-status {
+            color: var(--success);
+        }
+
+        .perm-card.denied .perm-status {
+            color: var(--danger);
+        }
+
+        #camera-preview {
+            width: 100%;
+            border-radius: 12px;
+            background: var(--bg);
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: none;
+            margin: 1rem 0;
+            border: 1px solid var(--border);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .loading-state .spinner {
+            width: 32px;
+            height: 32px;
+            border-width: 3px;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .step.active {
+            background: var(--accent);
+        }
+
+        .step.done {
+            background: var(--success);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap">
+        <div class="card fade-up">
+            <div class="step-indicator">
+                <div class="step done"></div>
+                <div class="step active"></div>
+                <div class="step"></div>
+                <div class="step"></div>
+            </div>
+
+            <div class="logo-area">
+                <div class="logo-icon">📋</div>
+                <h1>Check-In</h1>
+                <p id="config-summary">Loading your interview settings...</p>
+            </div>
+
+            <div id="error-box" class="alert alert-error" style="display:none"></div>
+            <div id="info-box" class="alert alert-info" style="display:none"></div>
+
+            <div class="perm-grid">
+                <div class="perm-card" id="cam-card">
+                    <div class="perm-icon">📷</div>
+                    <div style="font-weight:600">Camera</div>
+                    <div class="perm-status" id="cam-status">Waiting...</div>
+                </div>
+                <div class="perm-card" id="mic-card">
+                    <div class="perm-icon">🎤</div>
+                    <div style="font-weight:600">Microphone</div>
+                    <div class="perm-status" id="mic-status">Waiting...</div>
+                </div>
+            </div>
+
+            <video id="camera-preview" autoplay muted playsinline></video>
+
+            <!-- Question generation loading -->
+            <div id="gen-loading" class="loading-state" style="display:none">
+                <div class="spinner" style="margin:0 auto 0.8rem"></div>
+                <div style="color:var(--text2);font-size:0.9rem">🤖 AI is preparing your questions...</div>
+                <div style="color:var(--text3);font-size:0.8rem;margin-top:0.3rem">This may take 20–40 seconds</div>
+            </div>
+
+            <div id="gen-done" class="alert alert-success" style="display:none">
+                ✅ Questions ready! You're all set.
+            </div>
+
+            <hr class="divider" />
+
+            <button id="proceed-btn" class="btn btn-primary btn-full" disabled>
+                Allow Permissions First
+            </button>
+            <div style="text-align:center;margin-top:0.8rem">
+                <a href="index.html" style="color:var(--text3);font-size:0.85rem;text-decoration:none">← Back to
+                    Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const config = JSON.parse(sessionStorage.getItem('interviewConfig') || '{}');
+        if (!config.field) window.location.href = 'index.html';
+
+        document.getElementById('config-summary').textContent =
+            `${config.field} · ${config.level} · ${config.total} Questions · ${config.maxtime} min`;
+
+        let camOk = false, micOk = false, questionsReady = false;
+        let stream = null;
+
+        function updateBtn() {
+            const btn = document.getElementById('proceed-btn');
+            if (camOk && micOk && questionsReady) {
+                btn.disabled = false;
+                btn.textContent = 'Start Interview →';
+            } else if (camOk && micOk && !questionsReady) {
+                btn.disabled = true;
+                btn.textContent = 'Preparing questions...';
+            } else {
+                btn.disabled = true;
+                btn.textContent = 'Allow Permissions First';
+            }
+        }
+
+        async function requestPermissions() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+                // Camera OK
+                const vid = document.getElementById('camera-preview');
+                vid.srcObject = stream;
+                vid.style.display = 'block';
+                document.getElementById('cam-card').classList.add('granted');
+                document.getElementById('cam-status').textContent = 'Granted ✓';
+                camOk = true;
+
+                // Mic OK
+                document.getElementById('mic-card').classList.add('granted');
+                document.getElementById('mic-status').textContent = 'Granted ✓';
+                micOk = true;
+
+                updateBtn();
+                generateQuestions();
+            } catch (err) {
+                const msg = err.name === 'NotAllowedError'
+                    ? 'Permission denied. Please allow camera & mic in browser settings.'
+                    : 'Could not access camera/mic: ' + err.message;
+                document.getElementById('error-box').textContent = msg;
+                document.getElementById('error-box').style.display = 'block';
+
+                document.getElementById('cam-card').classList.add('denied');
+                document.getElementById('cam-status').textContent = 'Denied ✗';
+                document.getElementById('mic-card').classList.add('denied');
+                document.getElementById('mic-status').textContent = 'Denied ✗';
+            }
+        }
+
+        async function generateQuestions() {
+            document.getElementById('gen-loading').style.display = 'block';
+
+            try {
+                const res = await fetch('/api/generate-questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        field: config.field,
+                        level: config.level,
+                        total: config.total
+                    })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                sessionStorage.setItem('questions', JSON.stringify(data.questions));
+                questionsReady = true;
+
+                document.getElementById('gen-loading').style.display = 'none';
+                document.getElementById('gen-done').style.display = 'block';
+                updateBtn();
+            } catch (err) {
+                document.getElementById('gen-loading').style.display = 'none';
+                document.getElementById('error-box').textContent = '❌ ' + err.message;
+                document.getElementById('error-box').style.display = 'block';
+            }
+        }
+
+        document.getElementById('proceed-btn').addEventListener('click', () => {
+            // Stop camera tracks before leaving (interview page will re-request)
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            window.location.href = 'interview.html';
+        });
+
+        // Auto-trigger permissions on load
+        requestPermissions();
+    </script>
+</body>
+
+</html>

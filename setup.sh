@@ -1,88 +1,44 @@
 #!/bin/bash
-
-# Quick Setup Script for Internshala Voice Interview Platform
-# This script automates the initial setup process
-
-echo "🎙️  Internshala Voice Interview Platform - Quick Setup"
-echo "======================================================="
 echo ""
-
-# Check Node.js
-echo "📦 Checking Node.js..."
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 18+ from https://nodejs.org/"
-    exit 1
-fi
-echo "✅ Node.js $(node --version) found"
+echo "=========================================="
+echo "  MockMind AI - Interview Bot Setup"
+echo "=========================================="
+echo ""
 
 # Check Python
-echo "🐍 Checking Python..."
 if ! command -v python3 &> /dev/null; then
-    if ! command -v python &> /dev/null; then
-        echo "❌ Python is not installed. Please install Python 3.8+ from https://python.org/"
-        exit 1
-    fi
-    PYTHON_CMD="python"
-else
-    PYTHON_CMD="python3"
-fi
-echo "✅ Python $($PYTHON_CMD --version) found"
-
-# Check pip
-echo "📦 Checking pip..."
-if ! command -v pip3 &> /dev/null; then
-    if ! command -v pip &> /dev/null; then
-        echo "❌ pip is not installed. Please install pip"
-        exit 1
-    fi
-    PIP_CMD="pip"
-else
-    PIP_CMD="pip3"
-fi
-echo "✅ pip found"
-
-# Install Node.js dependencies
-echo ""
-echo "📦 Installing Node.js dependencies..."
-npm install
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install Node.js dependencies"
+    echo "[ERROR] Python 3 not found. Install from https://python.org"
     exit 1
 fi
-echo "✅ Node.js dependencies installed"
+echo "[OK] Python found"
 
-# Install Python dependencies
-echo ""
-echo "🐍 Installing Python dependencies..."
-$PIP_CMD install -r api_py/requirements.txt
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to install Python dependencies"
+# Check Node.js
+if ! command -v node &> /dev/null; then
+    echo "[ERROR] Node.js not found. Install from https://nodejs.org"
     exit 1
 fi
-echo "✅ Python dependencies installed"
+echo "[OK] Node.js found"
 
-# Setup .env file
-echo ""
-if [ ! -f .env ]; then
-    echo "📝 Creating .env file..."
-    cp .env.example .env
-    echo "✅ .env file created"
-    echo ""
-    echo "⚠️  IMPORTANT: Please edit .env and add your GEMINI_API_KEY"
-    echo "   Get your API key from: https://aistudio.google.com/app/apikey"
-    echo ""
-else
-    echo "✅ .env file already exists"
+# Check Ollama
+if ! command -v ollama &> /dev/null; then
+    echo "[ERROR] Ollama not found. Install from https://ollama.ai"
+    exit 1
 fi
+echo "[OK] Ollama found"
 
-# Final instructions
 echo ""
-echo "🎉 Setup complete!"
+echo "[1/3] Installing Python dependencies..."
+pip3 install -r requirements.txt
+
 echo ""
-echo "Next steps:"
-echo "1. Edit .env and add your GEMINI_API_KEY (if not done already)"
-echo "2. Run 'npm run dev' to start the application"
-echo "3. Open http://localhost:5173 in your browser"
+echo "[2/3] Installing React frontend dependencies..."
+cd react-frontend && npm install && cd ..
+
 echo ""
-echo "For detailed instructions, see SETUP.md"
+echo "[3/3] Pulling AI model (llama3.2:3b)..."
+ollama pull llama3.2:3b
+
 echo ""
+echo "=========================================="
+echo "  Setup Complete! Run ./start.sh to launch"
+echo "=========================================="

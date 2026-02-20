@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MockMind AI — Your Results</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        .result-header {
+            text-align: center;
+            padding: 2rem 0 1.5rem;
+        }
+
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 0 30px rgba(108, 99, 255, 0.4);
+        }
+
+        .candidate-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+
+        .token-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.78rem;
+            color: var(--text2);
+            margin-top: 0.6rem;
+            font-family: monospace;
+            letter-spacing: 0.08em;
+        }
+
+        /* Score ring */
+        .score-section {
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .score-ring-wrap {
+            display: inline-block;
+            position: relative;
+        }
+
+        .score-ring {
+            width: 140px;
+            height: 140px;
+            transform: rotate(-90deg);
+        }
+
+        .ring-bg {
+            fill: none;
+            stroke: var(--bg3);
+            stroke-width: 10;
+        }
+
+        .ring-fill {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke: url(#scoreGrad);
+            stroke-dasharray: 352;
+            stroke-dashoffset: 352;
+            transition: stroke-dashoffset 1.5s ease;
+        }
+
+        .ring-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ring-score {
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+
+        .ring-label {
+            font-size: 0.7rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Metric bars */
+        .metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            margin: 1.5rem 0;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 36px;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .metric-name {
+            font-size: 0.82rem;
+            color: var(--text2);
+        }
+
+        .metric-val {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        /* Chance badge */
+        .chance-card {
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.15), rgba(56, 189, 248, 0.1));
+            border: 1px solid rgba(108, 99, 255, 0.3);
+            border-radius: 14px;
+            padding: 1.4rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .chance-pct {
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent2), var(--accent3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .chance-label {
+            font-size: 0.85rem;
+            color: var(--text2);
+            margin-top: 0.2rem;
+        }
+
+        /* Lists */
+        .list-section {
+            background: var(--bg2);
+            border-radius: 12px;
+            padding: 1.2rem;
+        }
+
+        .list-section h3 {
+            font-size: 0.85rem;
+            color: var(--text2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.8rem;
+        }
+
+        .list-section ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .list-section li {
+            font-size: 0.88rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        /* Summary */
+        .summary-text {
+            background: var(--bg2);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 10px 10px 0;
+            padding: 1rem 1.2rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text2);
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        /* Step dots  */
+        .step-indicator {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .step {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+
+        .step.done {
+            background: var(--success);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-wrap" style="padding:2rem 1rem;">
+        <div class="step-indicator">
+            <div class="step done"></div>
+            <div class="step done"></div>
+            <div class="step done"></div>
+            <div class="step done"></div>
+        </div>
+
+        <div class="card card-wide fade-up" id="result-card">
+
+            <!-- Header -->
+            <div class="result-header">
+                <div class="avatar">🎓</div>
+                <div class="candidate-name" id="r-name">—</div>
+                <div style="color:var(--text2);font-size:0.85rem;margin-top:0.3rem" id="r-meta">— · — · —</div>
+                <div class="token-badge">🔑 Token: <span id="r-token">—</span></div>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- Score ring -->
+            <div class="score-section">
+                <div class="score-ring-wrap">
+                    <svg class="score-ring" viewBox="0 0 120 120">
+                        <defs>
+                            <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#6c63ff" />
+                                <stop offset="100%" stop-color="#38bdf8" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="ring-bg" cx="60" cy="60" r="56" />
+                        <circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="56" />
+                    </svg>
+                    <div class="ring-center">
+                        <div class="ring-score" id="r-score">0</div>
+                        <div class="ring-label">Overall Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection chance -->
+            <div class="chance-card">
+                <div class="chance-pct" id="r-chance">0%</div>
+                <div class="chance-label">Estimated Chance of Selection</div>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- Breakdown metrics -->
+            <h3
+                style="font-size:0.85rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem">
+                Score Breakdown</h3>
+            <div class="metrics" id="metrics-container"></div>
+
+            <hr class="divider" />
+
+            <!-- AI Summary -->
+            <div class="summary-text" id="r-summary">—</div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem">
+                <div class="list-section">
+                    <h3>✅ Strengths</h3>
+                    <ul id="r-strengths"></ul>
+                </div>
+                <div class="list-section">
+                    <h3>📈 Improve</h3>
+                    <ul id="r-improvements"></ul>
+                </div>
+            </div>
+
+            <hr class="divider" />
+
+            <div style="display:flex;gap:0.8rem;flex-wrap:wrap">
+                <button class="btn btn-primary" onclick="window.print()">🖨️ Download / Print</button>
+                <a href="index.html" class="btn btn-secondary">🔄 Start New Interview</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const result = JSON.parse(sessionStorage.getItem('interviewResult') || '{}');
+        if (!result.overall_score) {
+            document.getElementById('result-card').innerHTML = `
+      <div style="text-align:center;padding:3rem">
+        <div style="font-size:3rem">😕</div>
+        <h2>No results found</h2>
+        <p style="color:var(--text2);margin:1rem 0">Please complete an interview first.</p>
+        <a href="index.html" class="btn btn-primary">Start Interview</a>
+      </div>`;
+        } else {
+            // Populate header
+            document.getElementById('r-name').textContent = result.name || 'Candidate';
+            document.getElementById('r-meta').textContent = `${result.field} · ${result.level} · ${result.totalQuestions} Questions`;
+            document.getElementById('r-token').textContent = result.token_id || '—';
+
+            // Score ring
+            const score = result.overall_score || 0;
+            document.getElementById('r-score').textContent = score;
+            // Circumference = 2π×56 ≈ 352
+            setTimeout(() => {
+                const offset = 352 - (352 * score / 100);
+                document.getElementById('ring-fill').style.strokeDashoffset = offset;
+            }, 100);
+
+            // Chance
+            const chance = Math.min(result.selection_chance || 0, 95);
+            document.getElementById('r-chance').textContent = chance + '%';
+
+            // Metrics
+            const metrics = [
+                { key: 'communication', label: 'Communication', icon: '🗣️' },
+                { key: 'relevance', label: 'Answer Relevance', icon: '🎯' },
+                { key: 'confidence', label: 'Confidence', icon: '💪' },
+                { key: 'domain_knowledge', label: 'Domain Knowledge', icon: '📚' },
+            ];
+            const mc = document.getElementById('metrics-container');
+            metrics.forEach(m => {
+                const val = result[m.key] || 0;
+                const color = val >= 70 ? 'var(--success)' : val >= 45 ? 'var(--warning)' : 'var(--danger)';
+                mc.innerHTML += `
+        <div class="metric-row">
+          <div class="metric-name">${m.icon} ${m.label}</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${val}%;background:${color};transition:width 1.2s ease"></div>
+          </div>
+          <div class="metric-val" style="color:${color}">${val}</div>
+        </div>`;
+            });
+
+            // Summary
+            document.getElementById('r-summary').textContent = result.summary || 'No summary available.';
+
+            // Lists
+            const sl = document.getElementById('r-strengths');
+            (result.strengths || []).forEach(s => {
+                sl.innerHTML += `<li><span>✅</span>${s}</li>`;
+            });
+            const il = document.getElementById('r-improvements');
+            (result.improvements || []).forEach(s => {
+                il.innerHTML += `<li><span>📌</span>${s}</li>`;
+            });
+        }
+    </script>
+</body>
+
+</html>

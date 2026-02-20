@@ -1,92 +1,76 @@
 @echo off
-REM Quick Setup Script for Internshala Voice Interview Platform (Windows)
-REM This script automates the initial setup process
+title MockMind AI - Setup
+color 0A
 
 echo.
-echo 🎙️  Internshala Voice Interview Platform - Quick Setup
-echo =======================================================
-echo.
-
-REM Check Node.js
-echo 📦 Checking Node.js...
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo ❌ Node.js is not installed. Please install Node.js 18+ from https://nodejs.org/
-    pause
-    exit /b 1
-)
-node --version
-echo ✅ Node.js found
+echo  ==========================================
+echo   MockMind AI - Interview Bot Setup
+echo  ==========================================
 echo.
 
 REM Check Python
-echo 🐍 Checking Python...
-where python >nul 2>nul
+python --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Python is not installed. Please install Python 3.8+ from https://python.org/
+    echo [ERROR] Python not found! Install from https://python.org/downloads
     pause
     exit /b 1
 )
-python --version
-echo ✅ Python found
-echo.
+echo [OK] Python found
 
-REM Check pip
-echo 📦 Checking pip...
-where pip >nul 2>nul
+REM Check Node.js
+node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ pip is not installed. Please install pip
+    echo [ERROR] Node.js not found! Install from https://nodejs.org
     pause
     exit /b 1
 )
-echo ✅ pip found
-echo.
+echo [OK] Node.js found
 
-REM Install Node.js dependencies
-echo 📦 Installing Node.js dependencies...
-call npm install
+REM Check Ollama
+ollama --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ Failed to install Node.js dependencies
+    echo [ERROR] Ollama not found! Install from https://ollama.ai
     pause
     exit /b 1
 )
-echo ✅ Node.js dependencies installed
-echo.
+echo [OK] Ollama found
 
-REM Install Python dependencies
-echo 🐍 Installing Python dependencies...
-pip install -r api_py\requirements.txt
+echo.
+echo [1/3] Installing Python dependencies...
+pip install -r requirements.txt
 if %errorlevel% neq 0 (
-    echo ❌ Failed to install Python dependencies
+    echo [ERROR] Failed to install Python dependencies
     pause
     exit /b 1
 )
-echo ✅ Python dependencies installed
-echo.
+echo [OK] Python dependencies installed
 
-REM Setup .env file
-if not exist .env (
-    echo 📝 Creating .env file...
-    copy .env.example .env
-    echo ✅ .env file created
-    echo.
-    echo ⚠️  IMPORTANT: Please edit .env and add your GEMINI_API_KEY
-    echo    Get your API key from: https://aistudio.google.com/app/apikey
-    echo.
+echo.
+echo [2/3] Installing React frontend dependencies...
+cd react-frontend
+npm install
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install Node.js dependencies
+    pause
+    exit /b 1
+)
+cd ..
+echo [OK] React dependencies installed
+
+echo.
+echo [3/3] Pulling AI model (llama3.2:3b)...
+echo This may take a few minutes depending on your internet speed...
+ollama pull llama3.2:3b
+if %errorlevel% neq 0 (
+    echo [WARNING] Could not pull model automatically. Run: ollama pull llama3.2:3b
 ) else (
-    echo ✅ .env file already exists
-    echo.
+    echo [OK] AI model ready
 )
 
-REM Final instructions
 echo.
-echo 🎉 Setup complete!
-echo.
-echo Next steps:
-echo 1. Edit .env and add your GEMINI_API_KEY (if not done already)
-echo 2. Run 'npm run dev' to start the application
-echo 3. Open http://localhost:5173 in your browser
-echo.
-echo For detailed instructions, see SETUP.md
+echo  ==========================================
+echo   Setup Complete!
+echo   Run start.bat to launch the application
+echo  ==========================================
 echo.
 pause
